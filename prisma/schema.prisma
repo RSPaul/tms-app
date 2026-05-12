@@ -1,0 +1,133 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        Int      @id @default(autoincrement())
+  email     String   @unique
+  password  String
+  firstName String
+  lastName  String
+  phone     String?
+  status    String   @default("Active")
+  roles     String   // Comma-separated string, e.g., "Admin,Signer"
+
+  // Relation for Signer -> Client (The client they belong to)
+  clientId  Int?
+  client    Client?  @relation("ClientSigners", fields: [clientId], references: [id])
+
+  // Relation for Signer -> Projects (The projects they are assigned to)
+  signedProjects Project[] @relation("SignerProjects")
+
+  // Relation for Consultant -> Assignments
+  assignments Assignment[] @relation("ConsultantAssignments")
+
+  resetToken       String?
+  resetTokenExpiry  DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Client {
+  id        Int      @id @default(autoincrement())
+  name      String
+  status    String   @default("Active") // "Active" or "Disabled"
+  
+  signers   User[]   @relation("ClientSigners")
+  projects  Project[] @relation("ClientProjects")
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Project {
+  id          Int      @id @default(autoincrement())
+  name        String
+  description String?
+  status      String   @default("Active") // "Active" or "Completed" or "On Hold"
+  
+  clientId    Int
+  client      Client   @relation("ClientProjects", fields: [clientId], references: [id])
+  
+  signerId    Int
+  signer      User     @relation("SignerProjects", fields: [signerId], references: [id])
+
+  assignments Assignment[] @relation("ProjectAssignments")
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model Assignment {
+  id              Int       @id @default(autoincrement())
+  consultantId    Int
+  consultant      User      @relation("ConsultantAssignments", fields: [consultantId], references: [id])
+  projectId       Int
+  project         Project   @relation("ProjectAssignments", fields: [projectId], references: [id])
+  recipientEmails String?   // Comma-separated list of emails
+  status          String    @default("Active") // "Active", "Disabled"
+  
+  payRates        PayRate[]
+  timesheets      Timesheet[]
+
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+}
+
+model PayRate {
+  id               Int        @id @default(autoincrement())
+  assignmentId     Int
+  assignment       Assignment @relation(fields: [assignmentId], references: [id], onDelete: Cascade)
+  
+  payRate          Float
+  billRate         Float
+  travelPayRate    Float
+  travelBillRate   Float
+  payRateType      String     // "1099" or "W2"
+  effectiveDate    DateTime   // Expected to be a Sunday
+  
+  timeEntries      TimeEntry[]
+
+  createdAt        DateTime   @default(now())
+  updatedAt        DateTime   @updatedAt
+}
+
+model Timesheet {
+  id              Int       @id @default(autoincrement())
+  guid            String?    @unique @default(uuid())
+  assignmentId    Int
+  assignment      Assignment @relation(fields: [assignmentId], references: [id])
+  weekEndingDate  DateTime  // Sunday
+  status          String    @default("Draft") // Draft, Submitted, Approved, Rejected, Processed
+  approvedAt      DateTime?
+  processedAt     DateTime?
+
+  entries         TimeEntry[]
+
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+}
+
+model TimeEntry {
+  id              Int       @id @default(autoincrement())
+  timesheetId     Int
+  timesheet       Timesheet @relation(fields: [timesheetId], references: [id], onDelete: Cascade)
+  payRateId       Int
+  payRate         PayRate   @relation(fields: [payRateId], references: [id])
+  date            DateTime
+  taskPerformed   String
+  regularHours    Float
+  travelHours     Float
+
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+}
