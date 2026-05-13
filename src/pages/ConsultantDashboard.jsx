@@ -141,11 +141,24 @@ const ConsultantDashboard = ({ username, onLogout }) => {
         .c-nav-item:hover { color: white; background: rgba(255,255,255,0.04); }
         .c-nav-item.active { color: white; background: rgba(99,102,241,0.12); border-left-color: var(--primary); }
         .c-logout:hover { color: #f87171; }
-        .sidebar-footer { margin-top: auto; padding: 12px 16px; border-top: 1px solid var(--border); }
-        .c-main { flex: 1; overflow-y: auto; padding: 40px; }
+        .c-main { flex: 1; overflow-y: auto; position: relative; }
+        .top-header {
+          height: 80px;
+          padding: 0 40px;
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          border-bottom: 1px solid var(--border);
+          background: rgba(10, 10, 15, 0.8);
+          backdrop-filter: blur(8px);
+          position: sticky;
+          top: 0;
+          z-index: 5;
+        }
+        .page-content { padding: 40px; max-width: 1200px; margin: 0 auto; }
         .c-page-title { font-size: 1.5rem; font-weight: 700; color: white; margin-bottom: 4px; }
         .c-page-sub { color: var(--text-muted); font-size: 0.9rem; margin-bottom: 32px; }
-        .glance-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px; margin-bottom: 32px; }
+        .glance-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 20px; margin-bottom: 32px; }
         .glance-card { padding: 24px; }
         .glance-icon { display: flex; align-items: center; gap: 10px; margin-bottom: 14px; }
         .glance-label { font-size: 0.85rem; color: var(--text-muted); font-weight: 500; }
@@ -178,19 +191,22 @@ const ConsultantDashboard = ({ username, onLogout }) => {
             </div>
           ))}
         </nav>
+      </aside>
 
-        <div className="sidebar-footer">
+      {/* Main content */}
+      <main className="c-main">
+        <header className="top-header">
+          <div style={{ color: 'var(--text-muted)' }}>
+            Consultant Portal / <span style={{ color: 'white', textTransform: 'capitalize' }}>{activeMenu.replace('_', ' ')}</span>
+          </div>
           <UserDropdown 
             username={username} 
             onLogout={onLogout} 
             onSettings={() => setActiveMenu('settings')} 
           />
-        </div>
-      </aside>
+        </header>
 
-      {/* Main content */}
-      <main className="c-main">
-
+        <div className="page-content animate-fade-in">
         {/* ── DASHBOARD VIEW ── */}
         {activeMenu === 'dashboard' && (
           <div className="animate-fade-in">
@@ -379,6 +395,7 @@ const ConsultantDashboard = ({ username, onLogout }) => {
           </div>
         )}
         {activeMenu === 'settings' && <SettingsView />}
+        </div>
       </main>
 
       <Toast message={toast.message} type={toast.type} onClose={() => setToast({ message: '', type: 'success' })} />
