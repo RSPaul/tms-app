@@ -351,7 +351,7 @@ const UsersManager = () => {
       <div className="glass-panel" style={{ padding: '24px' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
           <h2>Users List</h2>
-          <button className="btn-secondary" style={{ padding: '8px 16px' }} onClick={() => setShowExportModal(true)}>
+          <button className="btn-secondary" style={{ padding: '8px 16px', width: 'auto' }} onClick={() => setShowExportModal(true)}>
             📥 Export to CSV
           </button>
         </div>
