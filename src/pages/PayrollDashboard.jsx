@@ -251,6 +251,8 @@ const PayrollTimesheetsList = ({ status }) => {
   const [payRateTypeFilter, setPayRateTypeFilter] = useState('');
   const [expandedId, setExpandedId] = useState(null);
   const [showConfirmModal, setShowConfirmModal] = useState(false);
+  const [hasProcessedBatch, setHasProcessedBatch] = useState(false);
+  const [processedDataForExport, setProcessedDataForExport] = useState([]);
 
   const tableData = useDataTable(timesheets);
 
@@ -289,6 +291,8 @@ const PayrollTimesheetsList = ({ status }) => {
         body: JSON.stringify({ ids })
       });
       if (res.ok) {
+        setHasProcessedBatch(true);
+        setProcessedDataForExport([...timesheets]);
         fetchData();
       } else {
         alert("Failed to process timesheets");
@@ -299,6 +303,56 @@ const PayrollTimesheetsList = ({ status }) => {
     } finally {
       setIsProcessing(false);
     }
+  };
+
+  const handleExportCSV = () => {
+    if (!hasProcessedBatch) return;
+    
+    const headers = [
+      'Consultant', 'Week Ending Date', 'Client', 'Project', 'Signer Name', 
+      'Hours Worked', 'Hours Traveled', 'Pay Rate', 'Travel Pay Rate', 'Total'
+    ];
+    
+    let totalHoursWorked = 0;
+    let totalHoursTraveled = 0;
+    let totalAmount = 0;
+
+    const rows = processedDataForExport.map(ts => {
+      totalHoursWorked += (ts.hoursWorked || 0);
+      totalHoursTraveled += (ts.hoursTraveled || 0);
+      totalAmount += (ts.totalPay || 0);
+
+      return [
+        `"${ts.consultantName || ''}"`,
+        `"${fmtDate(ts.weekEndingDate)}"`,
+        `"${ts.clientName || ''}"`,
+        `"${ts.projectName || ''}"`,
+        `"${ts.signerName || ''}"`,
+        ts.hoursWorked || 0,
+        ts.hoursTraveled || 0,
+        ts.payRate || 0,
+        ts.travelPayRate || 0,
+        ts.totalPay || 0
+      ].join(',');
+    });
+
+    const totalRow = [
+      '"Total"', '""', '""', '""', '""', 
+      totalHoursWorked.toFixed(2), 
+      totalHoursTraveled.toFixed(2), 
+      '""', '""', 
+      totalAmount.toFixed(2)
+    ].join(',');
+
+    const csvContent = [headers.join(','), ...rows, totalRow].join('\n');
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.setAttribute('download', `processed_timesheets_${new Date().toISOString().slice(0, 10)}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
   };
 
   return (
@@ -325,6 +379,18 @@ const PayrollTimesheetsList = ({ status }) => {
               <option value="1099">1099</option>
             </select>
           </div>
+          {status === 'Approved' && (
+            <div title={hasProcessedBatch ? "This button can be used to export the timesheets to excel" : "Please process the timesheets before exporting"}>
+              <button 
+                onClick={handleExportCSV}
+                disabled={!hasProcessedBatch}
+                className="btn-secondary"
+                style={{ opacity: !hasProcessedBatch ? 0.5 : 1, cursor: !hasProcessedBatch ? 'not-allowed' : 'pointer', width: 'auto', padding: '8px 16px' }}
+              >
+                📥 Export to CSV
+              </button>
+            </div>
+          )}
           {status === 'Approved' && timesheets.length > 0 && (
             <button 
               onClick={handleBulkProcessClick}
