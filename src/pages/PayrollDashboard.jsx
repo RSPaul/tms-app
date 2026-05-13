@@ -85,8 +85,21 @@ const PayrollDashboard = ({ username, onLogout }) => {
         .pr-nav-item:hover { color: white; background: rgba(255,255,255,0.04); }
         .pr-nav-item.active { color: white; background: rgba(99,102,241,0.12); border-left-color: #6366f1; }
         .pr-logout:hover { color: #f87171; }
-        .sidebar-footer { margin-top: auto; padding: 12px 16px; border-top: 1px solid var(--border); }
-        .pr-main { flex: 1; overflow-y: auto; padding: 40px; }
+        .pr-main { flex: 1; overflow-y: auto; position: relative; }
+        .top-header {
+          height: 80px;
+          padding: 0 40px;
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          border-bottom: 1px solid var(--border);
+          background: rgba(10, 10, 15, 0.8);
+          backdrop-filter: blur(8px);
+          position: sticky;
+          top: 0;
+          z-index: 5;
+        }
+        .page-content { padding: 40px; max-width: 1200px; margin: 0 auto; }
         .stat-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 20px; margin-bottom: 28px; }
         .period-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px; margin-bottom: 28px; }
         .recent-table { width: 100%; border-collapse: collapse; }
@@ -112,17 +125,22 @@ const PayrollDashboard = ({ username, onLogout }) => {
             </div>
           ))}
         </nav>
-        <div className="sidebar-footer">
+      </aside>
+
+      {/* Main Content */}
+      <main className="pr-main">
+        <header className="top-header">
+          <div style={{ color: 'var(--text-muted)' }}>
+            Payroll Portal / <span style={{ color: 'white', textTransform: 'capitalize' }}>{activeMenu.replace('_', ' ')}</span>
+          </div>
           <UserDropdown 
             username={username} 
             onLogout={onLogout} 
             onSettings={() => setActiveMenu('settings')} 
           />
-        </div>
-      </aside>
+        </header>
 
-      {/* Main Content */}
-      <main className="pr-main">
+        <div className="page-content animate-fade-in">
         {loading ? (
           <div style={{ color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: 12 }}>
             <div style={{ width: 20, height: 20, border: '2px solid rgba(99,102,241,0.3)', borderTopColor: '#6366f1', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
@@ -238,6 +256,7 @@ const PayrollDashboard = ({ username, onLogout }) => {
         {activeMenu === 'all_records' && <ApprovedTimesheetsView mode="records" />}
         {activeMenu === 'processed' && <PayrollTimesheetsList status="Processed" />}
         {activeMenu === 'settings' && <SettingsView />}
+        </div>
       </main>
       <Toast message={toast.message} type={toast.type} onClose={() => setToast({ message: '', type: 'success' })} />
     </div>
