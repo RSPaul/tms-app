@@ -251,8 +251,6 @@ const PayrollTimesheetsList = ({ status }) => {
   const [payRateTypeFilter, setPayRateTypeFilter] = useState('');
   const [expandedId, setExpandedId] = useState(null);
   const [showConfirmModal, setShowConfirmModal] = useState(false);
-  const [hasProcessedBatch, setHasProcessedBatch] = useState(false);
-  const [processedDataForExport, setProcessedDataForExport] = useState([]);
 
   const tableData = useDataTable(timesheets);
 
@@ -291,8 +289,6 @@ const PayrollTimesheetsList = ({ status }) => {
         body: JSON.stringify({ ids })
       });
       if (res.ok) {
-        setHasProcessedBatch(true);
-        setProcessedDataForExport([...timesheets]);
         fetchData();
       } else {
         alert("Failed to process timesheets");
@@ -306,7 +302,7 @@ const PayrollTimesheetsList = ({ status }) => {
   };
 
   const handleExportCSV = () => {
-    if (!hasProcessedBatch) return;
+    if (timesheets.length === 0) return;
     
     const headers = [
       'Consultant', 'Week Ending Date', 'Client', 'Project', 'Signer Name', 
@@ -317,7 +313,7 @@ const PayrollTimesheetsList = ({ status }) => {
     let totalHoursTraveled = 0;
     let totalAmount = 0;
 
-    const rows = processedDataForExport.map(ts => {
+    const rows = timesheets.map(ts => {
       totalHoursWorked += (ts.hoursWorked || 0);
       totalHoursTraveled += (ts.hoursTraveled || 0);
       totalAmount += (ts.totalPay || 0);
@@ -379,13 +375,12 @@ const PayrollTimesheetsList = ({ status }) => {
               <option value="1099">1099</option>
             </select>
           </div>
-          {status === 'Approved' && (
-            <div title={hasProcessedBatch ? "This button can be used to export the timesheets to excel" : "Please process the timesheets before exporting"}>
+          {status === 'Processed' && timesheets.length > 0 && (
+            <div title="Export processed timesheets to CSV">
               <button 
                 onClick={handleExportCSV}
-                disabled={!hasProcessedBatch}
                 className="btn-secondary"
-                style={{ opacity: !hasProcessedBatch ? 0.5 : 1, cursor: !hasProcessedBatch ? 'not-allowed' : 'pointer', width: 'auto', padding: '8px 16px' }}
+                style={{ width: 'auto', padding: '8px 16px' }}
               >
                 📥 Export to CSV
               </button>
